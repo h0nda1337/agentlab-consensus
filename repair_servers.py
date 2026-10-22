@@ -20,6 +20,7 @@ class LazyServers:
             if config['agents'][name]['url'].rstrip('/') not in (f'http://127.0.0.1:{port}', f'http://localhost:{port}'):
                 raise ValueError('Carga por turnos: usa los puertos locales 8081/8082/8083 o desactiva coding.load_on_demand.')
         self.owner = uuid.uuid4().hex
+        self.settings = config.get('coding', {})
         self.active = None
         self.locks = ExitStack()
         self.locks.enter_context(target_lock(BASE/'work'/'repair-locks', 'local-model-pool'))
@@ -27,6 +28,9 @@ class LazyServers:
     def _invoke(self, name, stop=False):
         argv = [self.shell, '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(BASE/'start_servers.ps1'),
                 '-Agents', name, '-OwnerToken', self.owner]
+        for key, flag in (('server_profiles_path', '-ProfilesPath'), ('llama_server_path', '-LlamaServerPath')):
+            if self.settings.get(key):
+                argv += [flag, str(self.settings[key])]
         argv += ['-Stop'] if stop else ['-LowMemory']
         log_dir = BASE/'work'/'serverlogs'
         log_dir.mkdir(parents=True, exist_ok=True)

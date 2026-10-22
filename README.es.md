@@ -1,10 +1,59 @@
-# AgentLab v0.9: reparación cooperativa
+# AgentLab Consensus: reparación cooperativa
 
 El modo `repair` permite a Dars, Rade y Miso trabajar sobre software real.
 Dars propone implementación, Rade revisa corrección y Miso comprueba pruebas y
 casos límite. Los tres pueden inspeccionar, proponer cambios y ejecutar comandos.
 Los roles orientan su trabajo; ninguno tiene una misión oculta ni busca culpables.
 Las propuestas rotan entre los tres y todos reciben la misma evidencia compartida.
+
+## Empezar con el asistente
+
+Necesitas Python 3.11 o posterior y modelos servidos con llama.cpp que admitan
+chat y gramática GBNF. No se incluyen pesos de modelos ni dependencias Python.
+
+```powershell
+python .\agentlab.py setup
+```
+
+En Windows también puedes abrir `Setup.cmd` con doble clic. El asistente guía
+cuatro pasos: nombres del equipo, conexión de modelos, entorno y revisión final.
+Puedes conectar servidores existentes o elegir tus GGUF para cargarlos por turnos.
+Selecciona la plantilla nativa del GGUF o Gemma 2 según el modelo de cada agente.
+Los selectores de archivos de la interfaz evitan tener que escribir rutas.
+
+Enter conserva los valores actuales. Ctrl+C sale sin guardar el borrador. Al guardar
+se conservan ajustes adicionales y se respaldan los archivos anteriores. La
+comprobación distingue entre configuración guardada y requisitos pendientes; no
+inicia modelos. Preparar WSL es una opción explícita porque descarga Debian y paquetes.
+
+Sin configuración, `python agentlab.py` abre el asistente automáticamente. En
+Linux/macOS puedes usar el mismo asistente para carpetas y servidores existentes.
+
+## Interfaz para Windows y Visual Studio 2019
+
+Abre `Start-Desktop.cmd` para usar la interfaz. Incluye asistente visual, nombres
+editables, selección de GGUF, comprobación de conexiones, preparación de WSL,
+formulario de reparación y actividad en vivo con propuestas, votos y pruebas.
+El botón **Elegir Python** permite seleccionar el intérprete si no se detecta.
+
+Para editar o compilar, abre `desktop/AgentLab.Desktop.sln` en Visual Studio 2019
+o posterior con la carga **Desarrollo de escritorio de .NET** y elige Release.
+Usa WPF y .NET Framework 4.8. Las referencias de compilación se restauran por NuGet.
+El lanzador también compila automáticamente si aún no existe el ejecutable.
+[Documentación de Microsoft para WPF y VS 2019](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/get-started/walkthrough-my-first-wpf-desktop-application).
+
+La [versión portátil para Windows](https://github.com/h0nda1337/agentlab-consensus/releases)
+incluye la interfaz compilada: extrae todo el ZIP y abre `Start-Desktop.cmd`.
+Sigue necesitando Python 3.11+ y tus modelos; no requiere Visual Studio para ejecutarse.
+
+**Solicitar parada** conserva la sesión y espera a que termine la respuesta del
+modelo o comando actual antes de continuar con el cierre. Puede tardar varios
+minutos. La interfaz solo anuncia verificación cuando pasan las pruebas y los tres
+agentes aprueban el resultado. Para comprobar la aplicación sin abrir ventanas:
+
+```powershell
+.\Build-Desktop.ps1 -SelfTest
+```
 
 ## Cambiar nombres fácilmente
 
@@ -31,7 +80,7 @@ python .\agentlab.py folder "D:/mi-proyecto" --task "Describe el fallo que deben
 terminado. Puede ser `npm test`, `pytest`, un script de validación o una comprobación
 del sistema. Usa un comando que compruebe el resultado real del objetivo.
 
-La configuración entregada activa `coding.load_on_demand`: carga el modelo de
+Si eliges carga local por turnos, el asistente activa `coding.load_on_demand`: carga el modelo de
 quien está interviniendo y libera el servidor que inició para el turno anterior.
 Así pueden participar los tres sin quedar residentes junto al WSL. Los tres siguen
 compartiendo la misma discusión y todos votan. El arranque usa un perfil conservador:
@@ -122,7 +171,7 @@ el [modelo de seguridad](https://wsl.dev/technical-documentation/security/) y lo
    del resultado. Las pruebas anteriores a un cambio nunca bastan para cerrarlo.
 
 No se inyectan los prompts narrativos, memorias, secretos ni Vault de los personajes.
-Se reutilizan sus tres servidores locales y la adaptación de transporte de Gemma.
+Se utilizan los tres endpoints configurados y la adaptación de transporte elegida para cada modelo.
 La salida JSON se restringe con gramática GBNF y se valida antes de ejecutar.
 
 Opciones: `--max-steps 36` limita propuestas; `--timeout 120` limita cada comando.

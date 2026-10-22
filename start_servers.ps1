@@ -1,5 +1,6 @@
 param(
     [string]$LlamaServerPath = "",
+    [string]$ProfilesPath = "",
     [switch]$Restart,
     [switch]$LowMemory,
     [ValidateSet('Dars','Rade','Miso')][string[]]$Agents = @('Dars','Rade','Miso'),
@@ -68,12 +69,13 @@ if ([string]::IsNullOrWhiteSpace($LlamaServerPath)) {
 }
 if (-not (Test-Path -LiteralPath $LlamaServerPath)) { throw "No existe: $LlamaServerPath" }
 
-$profilesPath = Join-Path $PSScriptRoot 'server_profiles.json'
+if (-not $ProfilesPath) { $ProfilesPath = Join-Path $PSScriptRoot 'server_profiles.json' }
+$ProfilesPath = [IO.Path]::GetFullPath($ProfilesPath)
 if (-not (Test-Path -LiteralPath $profilesPath)) { throw 'Copy server_profiles.example.json to server_profiles.json and set your model paths and devices.' }
 $modelProfiles = Get-Content -LiteralPath $profilesPath -Raw | ConvertFrom-Json
 foreach ($slot in @('Dars','Rade','Miso')) {
     $modelPath = [string]$modelProfiles.$slot.model
-    if (-not [IO.Path]::IsPathRooted($modelPath)) { $modelPath = Join-Path $PSScriptRoot $modelPath }
+    if (-not [IO.Path]::IsPathRooted($modelPath)) { $modelPath = Join-Path (Split-Path -Parent $ProfilesPath) $modelPath }
     $modelProfiles.$slot.model = $modelPath
 }
 

@@ -20,3 +20,9 @@ server_profiles.json
 backups/
 prompts/
 Agents/
+bin/
+obj/
+.vs/
+*.user
+*.suo
+packages/

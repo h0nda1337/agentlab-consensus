@@ -8,19 +8,34 @@ The team has implementation, review, and testing roles. Every edit and shell com
 
 ## Quick start
 
-Requires Python 3.11+ and three running llama.cpp chat servers that support explicit GBNF `grammar` constraints. No Python packages or model weights are bundled.
+Requires Python 3.11+ and llama.cpp chat servers that support explicit GBNF `grammar` constraints. No Python packages or model weights are bundled. The wizard guides you through using existing servers or loading your own GGUF files by turns on Windows.
 
 ```powershell
 git clone https://github.com/h0nda1337/agentlab-consensus.git
 cd agentlab-consensus
-Copy-Item config.example.json config.json
-python agentlab.py agents names Atlas Iris Nova
+python agentlab.py setup
 python agentlab.py folder "C:/my-project" --task "Fix the failing calculation" --test "python -m unittest discover -s tests -v" --apply
 ```
 
-On Linux/macOS, use `cp config.example.json config.json`; folder mode uses Bash. WSL management and the optional automatic server launcher require Windows.
+On Windows you can also double-click `Setup.cmd`. On Linux/macOS the same terminal wizard works; folder mode uses Bash. WSL management and the optional automatic server launcher require Windows. A bare `python agentlab.py` opens setup when no configuration exists.
 
-Edit the URLs in `config.json` for your servers. Defaults are `127.0.0.1:8081`, `:8082`, and `:8083`. The example sets Gemma 2 transport for the testing agent: remove its `model_compat` entry if that endpoint uses a model with a native system role. Messages to models currently use Spanish.
+The four steps cover names, model connections/templates, folder or WSL, and a summary before saving. Existing settings are preserved and backed up. Exiting before saving discards the draft. The connection check reports pending requirements without launching local models. Model messages and the setup UI currently use Spanish.
+
+## Windows desktop · Visual Studio 2019
+
+Double-click `Start-Desktop.cmd` to open the desktop app. When built from source, the first launch compiles it using Visual Studio 2019 or later with **.NET desktop development** installed. To edit it, open `desktop/AgentLab.Desktop.sln` and build Release. It uses WPF and .NET Framework 4.8; the reference assemblies are restored automatically from NuGet. [Microsoft's WPF tutorial for VS 2019](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/get-started/walkthrough-my-first-wpf-desktop-application)
+
+The app includes the four-step setup wizard, GGUF and folder pickers, editable names, model checks, dedicated WSL preparation, a repair form, live proposals/votes/test output, and access to session files. It uses the same Python backend and validation as the terminal. **Choose Python** lets you select your interpreter if automatic detection fails. Python 3.11+ is still required.
+
+**Request stop** waits for the current model response or command to finish, then stops before the next operation and preserves the session. It can take several minutes. A successful result is shown only when the backend reports passing tests and unanimous final approval.
+
+Build and run the automated offscreen checks without opening windows:
+
+```powershell
+.\Build-Desktop.ps1 -SelfTest
+```
+
+For a portable Windows build that includes the compiled app, see [Releases](https://github.com/h0nda1337/agentlab-consensus/releases). Extract the whole ZIP and run `Start-Desktop.cmd`; Python and your models remain separate prerequisites.
 
 ## Rename agents with one command
 
@@ -56,9 +71,9 @@ Root can edit Linux system files and install packages. Changes stay in that dist
 
 On a Windows machine that cannot keep three models plus WSL in memory:
 
-1. Copy `server_profiles.example.json` to `server_profiles.json` and set your three GGUF paths, Vulkan devices, and chat-template flags.
-2. Install `llama-server.exe` and place it on `PATH`, or use the WinGet llama.cpp package the launcher discovers.
-3. Set `coding.load_on_demand` to `true` in `config.json`.
+Run `python agentlab.py setup` and choose local GGUF loading. Select `llama-server.exe`, each existing GGUF, device (`Vulkan0`, `CUDA0`, or `none` for CPU), and the model template. The wizard creates the private server profiles and links them to your configuration. Use Gemma 2 only for that model family.
+
+Manual configuration remains available through `config.example.json` and `server_profiles.example.json`. Defaults are local ports 8081/8082/8083. Existing external servers can use other base URLs; do not include `/v1`. Automatic loading also accepts `coding.llama_server_path` and `coding.server_profiles_path` for a custom launcher/profile location. Relative profile paths resolve beside the selected config; relative GGUF paths resolve beside the profile file.
 
 The launcher keeps one managed model resident at a time. Small GPU offload is used when commit allows; otherwise it uses CPU. It stops only servers started by the same session, checking ownership, PID, and start time. Other models are left running. This saves memory but can be slow.
 

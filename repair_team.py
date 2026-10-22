@@ -159,7 +159,7 @@ class CodingModels:
 
 class RepairTeam:
     def __init__(self, workspace, models, objective, test_command, run_dir,
-                 *, max_steps=36, command_timeout=120, emit=print):
+                 *, max_steps=36, command_timeout=120, emit=print, cancelled=None):
         if not objective.strip() or not test_command.strip():
             raise ValueError('Se necesitan objetivo y comando de pruebas.')
         if not 1 <= max_steps <= 500 or not 1 <= command_timeout <= 3600:
@@ -171,6 +171,7 @@ class RepairTeam:
         self.events = []
         self.max_steps, self.command_timeout = max_steps, command_timeout
         self.emit = emit
+        self.cancelled = cancelled or (lambda: False)
         self.last_test = None
         self.command_count = 0
         self.result = {'status': 'running', 'objective': objective, 'environment': workspace.description,
@@ -237,6 +238,7 @@ class RepairTeam:
         # another's vote before choosing their own, avoiding automatic imitation.
         context = self.context(proposal, changes)
         for name in self.models.names:
+            self.check_cancelled()
             label = self.label(name)
             self.emit(f'  {label} revisa la propuesta...')
             vote = validate_object(self.models.ask(name, 'review', context), VOTE_SCHEMA)
@@ -248,6 +250,7 @@ class RepairTeam:
         return accepted
 
     def command(self, command, kind='command'):
+        self.check_cancelled()
         self.command_count += 1
         self.emit(f'  Ejecutando: {command}')
         log = self.run_dir / 'commands' / f'{self.command_count:03d}.log'
@@ -273,6 +276,7 @@ class RepairTeam:
 
     def run(self):
         try:
+            self.check_cancelled()
             self.event('session', objective=self.objective, environment=self.workspace.description,
                        participants=[self.label(n) for n in self.models.names], test_command=self.test_command)
             listing = self.workspace.tool({'tool': 'list', 'path': ''})
@@ -294,10 +298,12 @@ class RepairTeam:
                         pass
             self.verify()  # Establish what actually fails before any proposal.
             for step in range(self.max_steps):
+                self.check_cancelled()
                 name = self.models.names[step % len(self.models.names)]
                 label = self.label(name)
                 self.emit(f'\nPaso {step+1}/{self.max_steps}: {label} propone...')
                 proposal = validate_object(self.models.ask(name, 'propose', self.context()), PROPOSAL_SCHEMA)
+                self.check_cancelled()
                 self.event('proposal', agent=label, agent_id=name, proposal=proposal)
                 tool = proposal['tool']
                 self.emit(f"{label}: {proposal['summary']} [{tool} {proposal['path']}]")
@@ -314,6 +320,7 @@ class RepairTeam:
                         changes = self.workspace.changes()
                         if not self.consensus(proposal, changes):
                             continue
+                        self.check_cancelled()
                         if self.workspace.changes()['fingerprint'] != changes['fingerprint']:
                             raise ValueError('Los archivos cambiaron durante la revisión final.')
                         self.result.update(status='verified', final_summary=proposal['summary'],
@@ -326,6 +333,7 @@ class RepairTeam:
                         else:
                             self.workspace.check_mutation(proposal)
                         if self.consensus(proposal):
+                            self.check_cancelled()
                             if tool == 'run':
                                 self.command(proposal['content'])
                             else:
@@ -353,3 +361,7 @@ class RepairTeam:
                 self.result.update(status='failed', artifact_error=str(exc))
                 self._save()
         return self.result
+
+    def check_cancelled(self):
+        if self.cancelled():
+            raise KeyboardInterrupt()
