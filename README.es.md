@@ -115,7 +115,7 @@ el [modelo de seguridad](https://wsl.dev/technical-documentation/security/) y lo
 3. Lecturas y el comando de pruebas configurado pueden ejecutarse directamente.
    Cada edición y cualquier otro comando requieren el voto de los tres. Cada uno
    revisa la propuesta exacta por separado antes de ver los votos de sus compañeros.
-4. Un solo `revise` impide la ejecución. Su razón vuelve a la discusión compartida
+4. Un solo `request_changes` impide la ejecución. Su razón vuelve a la discusión compartida
    para que el siguiente proponente la resuelva.
 5. Después de cada cambio aprobado ejecuta automáticamente el comando de pruebas.
    Al solicitar cierre, repite las pruebas y solicita aprobación unánime

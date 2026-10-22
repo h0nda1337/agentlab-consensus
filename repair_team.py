@@ -37,7 +37,7 @@ PROPOSAL_SCHEMA = object_schema({
     'content': string_schema(10000),
 })
 VOTE_SCHEMA = object_schema({
-    'decision': {'type': 'string', 'enum': ['approve', 'revise']},
+    'decision': {'type': 'string', 'enum': ['approve', 'request_changes']},
     'reason': string_schema(600),
 })
 
@@ -60,7 +60,8 @@ test: ejecuta el comando de verificación del supervisor.
 finish: solicitar cierre tras resolver el objetivo; el orquestador repite las pruebas.
 Rellena con cadena vacía los campos que no uses. Todo el código va dentro del JSON.
 Cambios y comandos run requieren aprobación unánime de los tres agentes.
-Si alguien pide revise, corrige la propuesta según su razón. Nunca simules su aprobación.
+request_changes significa RECHAZAR por un defecto concreto; no significa simplemente revisar.
+Si alguien pide request_changes, corrige la propuesta según su razón. Nunca simules su aprobación.
 Al revisar, señala defectos concretos de la propuesta. No pidas información que ya está
 en el objetivo, las observaciones o execution_scope. Una edición de un archivo no cambia
 los demás archivos. No inventes requisitos adicionales ni exijas cambiar pruebas correctas.
@@ -127,7 +128,8 @@ class CodingModels:
         system += '\nIntegrantes del equipo: '+', '.join(self.display_names.values())+'.'
         task = ('Propón el siguiente paso.' if phase == 'propose' else
                 'Revisa la propuesta exacta adjunta. approve significa ejecutarla tal cual; '
-                'revise exige explicar un problema concreto o información que falta. '
+                'request_changes RECHAZA la propuesta y exige identificar un defecto concreto en ella. '
+                'Si no encuentras un defecto concreto, usa approve; puedes sugerir mejoras opcionales en reason sin bloquear. '
                 'Si es finish, revisa el diff y las pruebas REALES antes de aprobar el objetivo completo.')
         system += '\nFormato JSON exacto:\n'+json.dumps(schema, ensure_ascii=False)
         messages = [{'role': 'system', 'content': system},

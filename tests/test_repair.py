@@ -36,8 +36,8 @@ class ScriptedModels:
         self.calls.append((name, phase, context))
         if phase == 'propose':
             return self.proposals.popleft()
-        decision = 'revise' if self.veto == name else 'approve'
-        return {'decision': decision, 'reason': 'Falta evidencia.' if decision == 'revise' else 'Cambio revisado.'}
+        decision = 'request_changes' if self.veto == name else 'approve'
+        return {'decision': decision, 'reason': 'Falta evidencia.' if decision == 'request_changes' else 'Cambio revisado.'}
 
 
 class RepairTests(unittest.TestCase):
@@ -160,6 +160,18 @@ class RepairTests(unittest.TestCase):
                 resolve_file(self.workspace.root, name)
         with self.assertRaisesRegex(ValueError, 'exacto'):
             self.workspace.tool(action('replace', path='calc.py', search='missing', content='new'))
+
+    def test_search_accepts_a_single_file(self):
+        found = self.workspace.tool(action('search', path='calc.py', search='return'))
+        self.assertIn('calc.py:2:', found)
+        self.assertIn('a - b', found)
+
+    def test_wsl_domain_error_remains_recoverable(self):
+        workspace = object.__new__(WSLWorkspace)
+        workspace.root = '/workspace'
+        with patch.object(workspace, '_python', return_value=json.dumps({'ok':False,'error':'Archivo inexistente'})):
+            with self.assertRaisesRegex(ValueError, 'inexistente'):
+                workspace.tool(action('read', path='missing.py'))
 
     def test_junction_cannot_escape_or_be_copied(self):
         outside = self.base/'outside'

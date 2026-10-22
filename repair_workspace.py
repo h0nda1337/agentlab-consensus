@@ -107,11 +107,14 @@ def file_tool(root, proposal, full_access=False, dry_run=False):
     tool = proposal['tool']
     path = resolve_file(root, proposal.get('path', ''), full_access)
     if tool in ('list', 'search'):
-        if not path.is_dir():
-            raise ValueError('Se esperaba una carpeta.')
+        if tool == 'list' and not path.is_dir():
+            raise ValueError('list necesita una carpeta.')
+        if not path.is_dir() and not path.is_file():
+            raise ValueError('La ruta de búsqueda no existe.')
+        entries = files_in(path) if path.is_dir() else [path]
         rows = []
-        for entry in files_in(path):
-            relative = entry.relative_to(path).as_posix()
+        for entry in entries:
+            relative = entry.relative_to(path).as_posix() if path.is_dir() else entry.name
             if tool == 'list':
                 rows.append(f'{relative} ({entry.stat().st_size} bytes)')
             elif entry.stat().st_size <= MAX_FILE:
@@ -383,14 +386,24 @@ print('OK')""", [root])
 
     def tool(self, proposal):
         # Same audited file tools on both systems; no Windows drives or shared SSH.
+        return self._file_operation(proposal, False)
+
+    def _file_operation(self, proposal, dry_run):
         source = Path(__file__).read_text(encoding='utf-8')
-        worker = source + '\nprint(file_tool(sys.argv[1], json.loads(sys.stdin.read()), True))'
-        return self._python(worker, [self.root], json.dumps(proposal).encode('utf-8'))
+        worker = source + '''
+try:
+    result=file_tool(sys.argv[1], json.loads(sys.stdin.read()), True, sys.argv[2]=='1')
+    print(json.dumps({'ok':True,'result':result}))
+except (ValueError,OSError,UnicodeError) as exc:
+    print(json.dumps({'ok':False,'error':str(exc)}))
+'''
+        response = json.loads(self._python(worker, [self.root, '1' if dry_run else '0'], json.dumps(proposal).encode('utf-8')))
+        if not response['ok']:
+            raise ValueError(response['error'])
+        return response['result']
 
     def check_mutation(self, proposal):
-        source = Path(__file__).read_text(encoding='utf-8')
-        worker = source + '\nprint(file_tool(sys.argv[1], json.loads(sys.stdin.read()), True, True))'
-        return self._python(worker, [self.root], json.dumps(proposal).encode('utf-8'))
+        return self._file_operation(proposal, True)
 
     def command(self, command, timeout, log_path):
         import shlex

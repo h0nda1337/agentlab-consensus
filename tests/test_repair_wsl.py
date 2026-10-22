@@ -26,8 +26,9 @@ class WSLRepairTests(unittest.TestCase):
                 self.assertIn('root access verified', workspace.tool(action('read', path=probe)))
             finally:
                 workspace.tool(action('delete', path=probe))
-            models = ScriptedModels([action('replace', path='calc.py', search='return a-b', content='return a+b'), action('finish')])
-            team = RepairTeam(workspace, models, 'Reparar suma en WSL', 'python3 -m unittest -v', folder, max_steps=2, emit=lambda _: None)
+            self.assertIn('calc.py:2:', workspace.tool(action('search', path='calc.py', search='return')))
+            models = ScriptedModels([action('read', path='missing.py'), action('replace', path='calc.py', search='return a-b', content='return a+b'), action('finish')])
+            team = RepairTeam(workspace, models, 'Reparar suma en WSL', 'python3 -m unittest -v', folder, max_steps=3, emit=lambda _: None)
             result = team.run()
             self.assertEqual(result['status'], 'verified')
             self.assertEqual(result['last_test']['exit_code'], 0)
