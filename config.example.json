@@ -1,0 +1,24 @@
+{
+  "agents": {
+    "Dars": {
+      "display_name": "Builder",
+      "url": "http://127.0.0.1:8081"
+    },
+    "Rade": {
+      "display_name": "Reviewer",
+      "url": "http://127.0.0.1:8082"
+    },
+    "Miso": {
+      "display_name": "Tester",
+      "url": "http://127.0.0.1:8083"
+    }
+  },
+  "coding": {
+    "load_on_demand": false,
+    "max_reply_tokens": 1800,
+    "model_timeout": 300
+  },
+  "model_compat": {
+    "Miso": "gemma2"
+  }
+}

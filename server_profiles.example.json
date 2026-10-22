@@ -1,0 +1,25 @@
+{
+  "Dars": {
+    "model": "models/builder.gguf",
+    "device": "Vulkan0",
+    "template_args": [
+      "--jinja"
+    ]
+  },
+  "Rade": {
+    "model": "models/reviewer.gguf",
+    "device": "Vulkan0",
+    "template_args": [
+      "--jinja"
+    ]
+  },
+  "Miso": {
+    "model": "models/tester.gguf",
+    "device": "Vulkan0",
+    "template_args": [
+      "--no-jinja",
+      "--chat-template",
+      "gemma"
+    ]
+  }
+}
