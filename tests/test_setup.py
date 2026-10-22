@@ -146,7 +146,7 @@ class SetupTests(unittest.TestCase):
         config_data = json.loads(before)
         replacement = Path.replace
         def fail_config(source, target):
-            if Path(target) == self.config:
+            if Path(target).resolve() == self.config.resolve():
                 raise OSError('Simulated config publish failure')
             return replacement(source, target)
         with patch('setup_service.prepare', return_value=(config_data, {'changed':True}, profiles_path)), patch.object(Path, 'replace', fail_config):
