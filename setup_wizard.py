@@ -105,7 +105,7 @@ def interactive(config_path, ask=input, emit=print):
         emit('\nSiguiente paso: abre Start-Desktop.cmd o ejecuta una reparación desde la terminal.')
         emit(f'python agentlab.py --config "{Path(config_path).resolve()}" '+
              (f'wsl --distro "{draft["wsl_distro"]}" --path /workspace/mi-proyecto' if draft['workspace_mode'] == 'wsl' else 'folder "C:/mi-proyecto"')+
-             ' --task "Describe el arreglo" --test "python -m unittest -v"')
+             ' --task "Describe el arreglo" --test "'+('python3' if draft['workspace_mode'] == 'wsl' else 'python')+' -m unittest -v"')
         return 0
     except (EOFError, KeyboardInterrupt):
         emit('\nAsistente cerrado. Los cambios sin guardar se descartaron.')

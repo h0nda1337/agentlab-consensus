@@ -65,6 +65,17 @@ class SetupTests(unittest.TestCase):
         self.assertFalse(self.config.exists())
         self.assertIn('distintos', json.loads(result.stderr)['error'])
 
+    @unittest.skipUnless(os.name == 'nt', 'Windows WSL setup')
+    def test_wsl_wizard_can_defer_install_and_prints_linux_python_command(self):
+        answers = iter(['','','','1','','1','','1','','1','2','AgentLab-Example','1','1','2'])
+        messages = []
+        with patch('setup_wizard.provision_wsl', side_effect=AssertionError('Install was deferred')):
+            self.assertEqual(interactive(self.config, ask=lambda _: next(answers), emit=messages.append), 0)
+        self.assertIn('--test "python3 -m unittest -v"', messages[-1])
+        self.assertIn('--distro "AgentLab-Example"', messages[-1])
+        saved = json.loads(self.config.read_text(encoding='utf-8'))
+        self.assertEqual(saved['setup']['workspace_mode'], 'wsl')
+
     def test_existing_settings_and_backup_are_preserved(self):
         save(snapshot(self.config), self.config)
         previous = json.loads(self.config.read_text(encoding='utf-8'))
