@@ -91,7 +91,9 @@ def main(argv=None):
             except Exception as exc:
                 result.update(status='publish_failed', reason=str(exc))
                 team._save()
-        print(f"\nEstado: {result['status']}; aplicado al original: {result['applied']}\nResultados: {run_dir}", flush=True)
+        destination = (f"aplicado a la carpeta original: {result['applied']}" if args.mode == 'folder'
+                       else 'modo directo: los cambios se conservan dentro del WSL')
+        print(f"\nEstado: {result['status']}; {destination}\nResultados: {run_dir}", flush=True)
         if result.get('reason'):
             print(result['reason'])
         return 0 if result['status'] == 'verified' else 1
